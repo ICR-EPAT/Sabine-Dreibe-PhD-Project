@@ -1,0 +1,362 @@
+---
+title: "Sabine PhD Project"
+format: html
+editor: visual
+---
+
+#EUCTR Data
+
+#Combined search:
+
+https://www.clinicaltrialsregister.eu/ctr-search/search?query=%28%28%28%28%28%28%28%28%28%28%28%28%28%28Platform+trial%29+OR+%28Platform+trials%29%29+OR+%28trial+platform%29%29+OR+%28Platform+design%29%29+OR+%28platform+study%29%29+OR+%28Platform+clinical+trial%29%29+OR+%28Adaptive+platform%29%29+OR+%28Platform+protocol%29%29+OR+%28MAMS%29%29+OR+%28Multi+arm%29%29+OR+%28Umbrella+trial%29%29+OR+%28Umbrella+design%29%29+OR+%28basket+trial%29%29+OR+%28basket+design%29%29+OR+%28Dose+expansion%29%E2%80%AF&dateFrom=2018-01-01&dateTo=2024-12-31
+
+```{r EUCTR setup, include=TRUE}
+
+library(ctrdata)
+library(nodbi)
+library(devtools)
+
+remotes::install_github("rfhb/ctrdata", dependencies = TRUE, build_vignettes = FALSE)
+
+db <- nodbi::src_sqlite(
+dbname = "EUCTRv2",
+collection = "EUCTR Searchv2"
+)
+
+```
+
+```{r test query, include=TRUE}
+
+#Query 1: Using suggested original search criteria.
+
+query1 <- ctrGetQueryUrl("https://www.clinicaltrialsregister.eu/ctr-search/search?query=((((((((((((((Platform+trial)+OR+(Platform+trials))+OR+(trial+platform))+OR+(Platform+design))+OR+(platform+study))+OR+(Platform+clinical+trial))+OR+(Adaptive+platform))+OR+(Platform+protocol))+OR+(MAMS))+OR+(Multi+arm))+OR+(Umbrella+trial))+OR+(Umbrella+design))+OR+(basket+trial))+OR+(basket+design))+OR+(Dose+expansion)%E2%80%AF&dateFrom=2018-01-01&dateTo=2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = query1)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = query1,
+  con = db
+)
+
+#Count number of trial records
+
+ctrLoadQueryIntoDb(
+  queryterm = query1,
+  only.count = TRUE
+)$n
+
+dbFindFields(namepart = ".*", db, sample = TRUE, verbose = FALSE)
+
+EUCTRv2 <- dbGetFieldsIntoDf( fields = c("a2_eudract_number", "a3_full_title_of_the_trial", "a52_us_nct_clinicaltrialsgov_registry_number", "b1_sponsor.b11_name_of_sponsor", "e11_medical_conditions_being_investigated","e51_primary_end_points","x4_clinical_trial_type","x5_trial_status", "e811_randomised","a32_name_or_abbreviated_title_of_the_trial_where_available",  "e824_number_of_treatment_arms_in_the_trial"), con = db)
+
+EUCTRv3 <- dbGetFieldsIntoDf( fields = ".*", con = db)
+
+#Save .xlsx file compiled from database into R data frames.
+
+library(writexl)
+
+write_xlsx(EUCTRv2, "C:/Users/jskinner/OneDrive - The Institute of Cancer Research/Desktop/Sabine/R/Sabine PhD Project/EUCTRv2 Duplicate.xlsx")
+```
+
+#Sequential search:
+
+```{r setup database, include=TRUE}
+
+library(ctrdata)
+library(nodbi)
+library(devtools)
+
+remotes::install_github("rfhb/ctrdata", dependencies = TRUE, build_vignettes = FALSE)
+
+db_seq <- nodbi::src_sqlite(
+dbname = "EUCTRseq",
+collection = "EUCTR Searchseq"
+)
+
+```
+
+```{r trial retrieval sequential, include=TRUE}
+
+#Stepwise/individual search query
+
+seq1 <- ctrGetQueryUrl("https://www.clinicaltrialsregister.eu/ctr-search/search?query=%28Platform+trial%29&dateFrom=2018-01-01&dateTo=2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = seq1)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = seq1,
+  con = db_seq
+)
+
+###################################################################################################################
+
+seq2 <- ctrGetQueryUrl("https://www.clinicaltrialsregister.eu/ctr-search/search?query=%28Platform+trials%29&dateFrom=2018-01-01&dateTo=2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = seq2)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = seq2,
+  con = db_seq
+)
+
+###################################################################################################################
+
+seq3 <- ctrGetQueryUrl("https://www.clinicaltrialsregister.eu/ctr-search/search?query=%28trial+platform%29&dateFrom=2018-01-01&dateTo=2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = seq3)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = seq3,
+  con = db_seq
+)
+
+###################################################################################################################
+
+seq4 <- ctrGetQueryUrl("https://www.clinicaltrialsregister.eu/ctr-search/search?query=%28Platform+design%29&dateFrom=2018-01-01&dateTo=2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = seq4)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = seq4,
+  con = db_seq
+)
+
+###################################################################################################################
+
+seq5 <- ctrGetQueryUrl("https://www.clinicaltrialsregister.eu/ctr-search/search?query=+%28platform+study%29&dateFrom=2018-01-01&dateTo=2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = seq5)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = seq5,
+  con = db_seq
+)
+
+###################################################################################################################
+
+seq6 <- ctrGetQueryUrl("https://www.clinicaltrialsregister.eu/ctr-search/search?query=+%28Platform+clinical+trial%29&dateFrom=2018-01-01&dateTo=2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = seq6)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = seq6,
+  con = db_seq
+)
+
+###################################################################################################################
+
+seq7 <- ctrGetQueryUrl("https://www.clinicaltrialsregister.eu/ctr-search/search?query=+%28Adaptive+platform%29&dateFrom=2018-01-01&dateTo=2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = seq7)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = seq7,
+  con = db_seq
+)
+
+###################################################################################################################
+
+seq8 <- ctrGetQueryUrl("https://www.clinicaltrialsregister.eu/ctr-search/search?query=%28Platform+protocol%29&dateFrom=2018-01-01&dateTo=2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = seq8)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = seq8,
+  con = db_seq
+)
+
+###################################################################################################################
+
+seq9 <- ctrGetQueryUrl("https://www.clinicaltrialsregister.eu/ctr-search/search?query=%28MAMS%29&dateFrom=2018-01-01&dateTo=2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = seq9)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = seq9,
+  con = db_seq
+)
+
+###################################################################################################################
+
+seq10 <- ctrGetQueryUrl("https://www.clinicaltrialsregister.eu/ctr-search/search?query=%28Multi+arm%29&dateFrom=2018-01-01&dateTo=2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = seq10)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = seq10,
+  con = db_seq
+)
+
+###################################################################################################################
+
+seq11 <- ctrGetQueryUrl("https://www.clinicaltrialsregister.eu/ctr-search/search?query=%28Umbrella+trial%29&dateFrom=2018-01-01&dateTo=2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = seq11)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = seq11,
+  con = db_seq
+)
+
+###################################################################################################################
+
+seq12 <- ctrGetQueryUrl("https://www.clinicaltrialsregister.eu/ctr-search/search?query=%28Umbrella+design%29&dateFrom=2018-01-01&dateTo=2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = seq12)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = seq12,
+  con = db_seq
+)
+
+###################################################################################################################
+
+seq13 <- ctrGetQueryUrl("https://www.clinicaltrialsregister.eu/ctr-search/search?query=%28basket+trial%29&dateFrom=2018-01-01&dateTo=2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = seq13)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = seq13,
+  con = db_seq
+)
+
+###################################################################################################################
+
+seq14 <- ctrGetQueryUrl("https://www.clinicaltrialsregister.eu/ctr-search/search?query=+%28basket+design%29&dateFrom=2018-01-01&dateTo=2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = seq14)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = seq14,
+  con = db_seq
+)
+
+###################################################################################################################
+
+seq15 <- ctrGetQueryUrl("https://www.clinicaltrialsregister.eu/ctr-search/search?query=%28Dose+expansion%29&dateFrom=2018-01-01&dateTo=2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = seq15)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = seq15,
+  con = db_seq
+)
+```
+
+```{r retrieval into dataframe, include=TRUE}
+
+EUCTRseq <- dbGetFieldsIntoDf( fields = ".*", con = db_seq)
+
+library(writexl)
+
+write_xlsx(EUCTRseq, "C:/Users/jskinner/OneDrive - The Institute of Cancer Research/Desktop/Sabine/R/Sabine PhD Project/EUCTseq Duplicate.xlsx")
+
+```
+
+```{r Combining combined search and sequential search results, include=TRUE}
+
+EUCTRcomseq <- rbind(EUCTRv3,EUCTRseq)
+
+EUCTRcomseqfinal <- EUCTRcomseq
+
+library(tidyverse)
+library(dplyr)
+
+EUCTRcomseqfinal <- EUCTRcomseqfinal %>% distinct(a2_eudract_number, .keep_all = TRUE)
+
+#Both the combined searches with parentheses and the sequential searches yield identical amounts of trials. After filtering for duplicated rows within the "a2_eudract_number" field, a total of 740 trials remain. 
+
+#This means the combined search and sequential search are identical.
+
+EUCTRv3final <- EUCTRv3
+
+EUCTRv3final <- EUCTRv3final %>% distinct(a2_eudract_number, .keep_all = TRUE)
+
+#Combined final search once filtered for duplicates = 740 - Combined and sequential search numbers are equal.
+
+```
+
+# CTGOV2 Data (clinicaltrials.org)
+
+```{r CTGOV2 database setup, include=TRUE}
+
+library(ctrdata)
+library(nodbi)
+library(devtools)
+
+remotes::install_github("rfhb/ctrdata", dependencies = TRUE, build_vignettes = FALSE)
+
+db <- nodbi::src_sqlite(
+dbname = "CTGOV2",
+collection = "CTGOV2 Search"
+)
+
+```
+
+#Combined search:
+
+```{r CTGOV2 test query, include=TRUE}
+
+#Query 1: Using suggested original search criteria.
+
+ctgovquery1 <- ctrGetQueryUrl("https://clinicaltrials.gov/search?cond=((((((((((((((Platform%20trial)%20OR%20(Platform%20trials))%20OR%20(trial%20platform))%20OR%20(Platform%20design))%20OR%20(platform%20study))%20OR%20(Platform%20clinical%20trial))%20OR%20(Adaptive%20platform))%20OR%20(Platform%20protocol))%20OR%20(MAMS))%20OR%20(Multi%20arm))%20OR%20(Umbrella%20trial))%20OR%20(Umbrella%20design))%20OR%20(basket%20trial))%20OR%20(basket%20design))%20OR%20(Dose%20expansion)&term=((((((((((((((Platform%20trial)%20OR%20(Platform%20trials))%20OR%20(trial%20platform))%20OR%20(Platform%20design))%20OR%20(platform%20study))%20OR%20(Platform%20clinical%20trial))%20OR%20(Adaptive%20platform))%20OR%20(Platform%20protocol))%20OR%20(MAMS))%20OR%20(Multi%20arm))%20OR%20(Umbrella%20trial))%20OR%20(Umbrella%20design))%20OR%20(basket%20trial))%20OR%20(basket%20design))%20OR%20(Dose%20expansion)&intr=((((((((((((((Platform%20trial)%20OR%20(Platform%20trials))%20OR%20(trial%20platform))%20OR%20(Platform%20design))%20OR%20(platform%20study))%20OR%20(Platform%20clinical%20trial))%20OR%20(Adaptive%20platform))%20OR%20(Platform%20protocol))%20OR%20(MAMS))%20OR%20(Multi%20arm))%20OR%20(Umbrella%20trial))%20OR%20(Umbrella%20design))%20OR%20(basket%20trial))%20OR%20(basket%20design))%20OR%20(Dose%20expansion)&start=2018-01-01_2024-12-31")
+
+
+ctrOpenSearchPagesInBrowser(url = ctgovquery1)
+
+
+ctrLoadQueryIntoDb(
+  queryterm = ctgovquery1,
+  con = db
+)
+
+#Count number of trial records
+
+ctrLoadQueryIntoDb(
+  queryterm = ctgovquery1,
+  only.count = TRUE
+)$n
+
+dbFindFields(namepart = ".*", db, sample = TRUE, verbose = FALSE)
+
+CTRGOV2 <- dbGetFieldsIntoDf( fields = ".*", con = db)
+
+#Save .xlsx file compiled from database into R data frames.
+
+library(writexl)
+
+write_xlsx(CTRGOV2, "C:/Users/jskinner/OneDrive - The Institute of Cancer Research/Desktop/Sabine/R/Sabine PhD Project/CTRGOV2 Duplicate.xlsx")
+```
+
