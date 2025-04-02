@@ -1,0 +1,151 @@
+---
+title: "Duplication checks"
+format: html
+editor: visual
+---
+
+library(readxl)      # For reading Excel files
+library(dplyr)       # For data manipulation
+library(stringdist)  # For string similarity
+library(text2vec)    # For text vectorization and cosine similarity
+library(tidyr)       # For data reshaping
+
+# 1. Import the spreadsheets
+pubmed_data <- read_excel("path_to_pubmed_results.xlsx")
+ctgov_data <- read_excel("path_to_ctgov_results.xlsx")
+
+# 2. Define a function for comprehensive comparison
+compare_records <- function(pubmed_df, ctgov_df, 
+                           title_threshold = 0.7,
+                           author_threshold = 0.6) {
+  
+  # Initialize results dataframe
+  results <- data.frame()
+  
+  # Normalize text function
+  normalize_text <- function(text) {
+    if(is.na(text)) return("")
+    return(tolower(gsub("[[:punct:]]", "", gsub("\\s+", " ", trimws(text)))))
+  }
+  
+  # Normalize titles in both datasets
+  pubmed_df$normalized_title <- sapply(pubmed_df$title, normalize_text)
+  ctgov_df$normalized_title <- sapply(ctgov_df$title, normalize_text)
+  
+  # Normalize author names
+  if("authors" %in% colnames(pubmed_df)) {
+    pubmed_df$normalized_authors <- sapply(pubmed_df$authors, normalize_text)
+  }
+  if("investigators" %in% colnames(ctgov_df)) {
+    ctgov_df$normalized_investigators <- sapply(ctgov_df$investigators, normalize_text)
+  }
+  
+  # Create progress counter
+  total_comparisons <- nrow(pubmed_df) * nrow(ctgov_df)
+  counter <- 0
+  
+  # Look for direct NCT ID matches first (if available)
+  if("nct_id" %in% colnames(pubmed_df)) {
+    direct_matches <- inner_join(
+      pubmed_df, 
+      ctgov_df, 
+      by = "nct_id"
+    )
+    
+    if(nrow(direct_matches) > 0) {
+      # Process direct matches
+      # ...
+    }
+  }
+  
+  # Perform pairwise comparison
+  for(i in 1:nrow(pubmed_df)) {
+    # Get current PubMed record
+    pm_record <- pubmed_df[i, ]
+    
+    for(j in 1:nrow(ctgov_df)) {
+      # Update progress counter
+      counter <- counter + 1
+      if(counter %% 1000 == 0) {
+        cat(sprintf("Processing comparison %d of %d (%.1f%%)\n", 
+                   counter, total_comparisons, 100*counter/total_comparisons))
+      }
+      
+      # Get current CTGOV record
+      ct_record <- ctgov_df[j, ]
+      
+      # TITLE SIMILARITY
+      # Calculate Levenshtein similarity for titles
+      title_levenshtein <- 1 - stringdist(pm_record$normalized_title, 
+                                         ct_record$normalized_title, 
+                                         method = "lv") / 
+                               max(nchar(pm_record$normalized_title), 
+                                   nchar(ct_record$normalized_title))
+      
+      # Skip if title similarity is below threshold to save computation
+      if(title_levenshtein < title_threshold) next
+      
+      # AUTHOR SIMILARITY
+      author_similarity <- 0
+      if(all(c("normalized_authors", "normalized_investigators") %in% 
+             c(colnames(pubmed_df), colnames(ctgov_df)))) {
+        
+        # Split author strings into individual names
+        pm_authors <- unlist(strsplit(pm_record$normalized_authors, "[,;]"))
+        pm_authors <- trimws(pm_authors)
+        
+        ct_investigators <- unlist(strsplit(ct_record$normalized_investigators, "[,;]"))
+        ct_investigators <- trimws(ct_investigators)
+        
+        # Find common author surnames
+        pm_surnames <- sapply(pm_authors, function(x) {
+          parts <- unlist(strsplit(x, " "))
+          return(parts[length(parts)])  # Assume last part is surname
+        })
+        
+        ct_surnames <- sapply(ct_investigators, function(x) {
+          parts <- unlist(strsplit(x, " "))
+          return(parts[length(parts)])  # Assume last part is surname
+        })
+        
+        # Calculate author overlap
+        common_authors <- intersect(pm_surnames, ct_surnames)
+        author_similarity <- length(common_authors) / 
+                             min(length(pm_surnames), length(ct_surnames))
+      }
+      
+      # OTHER SIMILARITY FACTORS
+      # Add additional comparisons here (e.g., study size, dates, etc.)
+      
+      # Calculate overall similarity score
+      overall_similarity <- (title_levenshtein * 0.7) + (author_similarity * 0.3)
+      
+      # Add to results if overall similarity is high enough
+      if(overall_similarity > 0.6) {  # Adjust this threshold as needed
+        results <- rbind(results, data.frame(
+          pubmed_id = pm_record$pmid,
+          ctgov_id = ct_record$nct_id,
+          pubmed_title = pm_record$title,
+          ctgov_title = ct_record$title,
+          title_similarity = title_levenshtein,
+          author_similarity = author_similarity,
+          overall_similarity = overall_similarity,
+          stringsAsFactors = FALSE
+        ))
+      }
+    }
+  }
+  
+  # Sort by overall similarity (descending)
+  results <- results %>% arrange(desc(overall_similarity))
+  
+  return(results)
+}
+
+# 3. Run the comparison
+potential_duplicates <- compare_records(pubmed_data, ctgov_data)
+
+# 4. Export the results
+write.csv(potential_duplicates, "potential_duplicates.csv", row.names = FALSE)
+
+
