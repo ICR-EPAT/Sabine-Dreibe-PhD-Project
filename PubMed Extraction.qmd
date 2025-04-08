@@ -1,0 +1,251 @@
+---
+title: "PubMed extraction - clean/encode/analysis"
+format: html
+editor: visual
+---
+
+```{r import data, include=TRUE}
+
+#Prior to importing data go to Excel spreadsheet's raw data and make the start date and publication date into UK format. Split the start date into date and time in seperate columns. Save Excel file and join columns in R and re-label field as POSIXct format.
+
+library(readxl)
+
+pubmed <- read_xlsx("PubMed extraction sample - Dates.xlsx")
+
+```
+
+```{r time cleaning, include=TRUE}
+
+pubmed$Comp_Time <- paste(pubmed$`Start time`, pubmed$`Start hour`)
+
+#Trial Open/Published Date
+
+class(pubmed$`trial open/published date `)
+
+#[1] "POSIXct" "POSIXt"
+
+pubmed$`trial open/published date ` <- as.POSIXct(pubmed$`trial open/published date `, format="%Y-%m-%d")
+pubmed$`trial open/published date ` <- format(pubmed$`trial open/published date `, format="%d-%m-%Y")
+#pubmed$`trial open/published date ` <- as.Date(pubmed$`trial open/published date `, format="%d-%m-%Y")
+
+#class(pubmed$`trial open/published date `)
+
+#[1] "POSIXct" "POSIXt" 
+
+#Survey start date
+
+pubmed$Comp_Time <- as.POSIXct(pubmed$Comp_Time, format="%Y-%m-%d %H:%M:%S")
+pubmed$Comp_Time <- format(pubmed$Comp_Time, format="%d-%m-%Y% %H:%M:%S")
+#pubmed$Comp_Time <- as.POSIXct(pubmed$Comp_Time, format="%d-%m-%Y% %H:%M:%S")
+
+#class(pubmed$Comp_Time)
+
+#[1] "POSIXct" "POSIXt" 
+
+```
+
+```{r new data frame with no duplicates, include=TRUE}
+
+table(pubmed$`ID (e.g.  PM1, CT2 or EU3)`)
+
+#Remove first test entries from SD: 
+
+pubmed2 <- pubmed[-c(2), ]
+
+table(pubmed2$`ID (e.g.  PM1, CT2 or EU3)`)
+
+#Re-labelling with hard coded ID
+
+pubmed2$hardID <- pubmed2$`ID (e.g.  PM1, CT2 or EU3)`
+
+pubmed2$hardID[pubmed2$hardID == "34389237"] <- "PM1"
+
+pubmed2$hardID[pubmed2$hardID == "36973538"] <- "PM2"
+
+pubmed2[7,"hardID"] <- "CT1"
+pubmed2[8, "hardID"] <- "CT2"
+
+table(pubmed2$hardID)
+
+pubmed2[3,"hardID"] <- "PM1"
+pubmed2[5,"hardID"] <- "PM9"
+
+pubmed3 <- pubmed2[, c("ID (e.g.  PM1, CT2 or EU3)", "Trial registry ID", "Trial name", "hardID")]
+
+pubmed3[9,"hardID"] <- "PM7"
+pubmed3[10,"hardID"] <- "PM1"
+pubmed3$hardID[pubmed3$hardID == "PM 29"] <- "PM29"
+pubmed3[1,"hardID"] <- "PM3"
+pubmed3[2,"hardID"] <- "PM3"
+
+table(pubmed3$hardID)
+
+# CT1  CT2  PM1 PM10 PM11 PM12 PM13 PM14 PM16 PM17 PM18 PM19  PM2 PM20 PM23 PM24 PM25 PM27 PM28 
+#   1    1    3    1    2    2    2    3    1    1    1    1    1    1    2    1    1    1    1 
+#PM29  PM3 PM30 PM31 PM32 PM33 PM34  PM4  PM5  PM6  PM7  PM8  PM9 
+#   2    3    1    1    2    1    1    2    2    2    3    2    2 
+
+pubmed2$hardID_cc <- pubmed3$hardID
+
+#Drop entered Non-Eligible row
+```
+
+```{r registry number, include=TRUE}
+
+#Tidy NCT numbers/PMID numbers
+
+table(pubmed2$`Trial registry ID`)
+
+#                       ----------------------                        ---------------------- 
+#                                            1                                             1 
+#                                     38910310                                   NCT01203722 
+#                                            1                                             1 
+#                       ----------------------                                   NCT01248949 
+#                                            2                                             1 
+#                                  NCT01953926                        ---------------------- 
+#                                            2                                             1 
+#                                  NCT02419495                                   NCT02420912 
+#                                            1                                             1 
+#                                  NCT02465060                        ---------------------- 
+#                                            1                                             1 
+#                                  NCT02646748                        ---------------------- 
+#                                            1                                             1 
+#                       ---------------------- --------------------------------------------- 
+#                                            1                                             1 
+#                                  NCT02675829                       ----------------------- 
+#                                            1                                             1 
+#                                  NCT03066206                                   NCT03138083 
+#                                            1                                             1 
+#                       ----------------------                        ---------------------- 
+#                                            1                                             1 
+#                                  NCT03573544                                   NCT03651271 
+#                                            1                                             1 
+#                                  NCT03671018                        ---------------------- 
+#                                            1                                             1 
+#                                  NCT03805399                                   NCT03838042 
+#                                            2                                             3 
+#                       ----------------------                                   NCT03944772 
+#                                            1                                             4 
+#                       ----------------------                         --------------------- 
+#                                            1                                             1 
+#                                  NCT04145531                                   NCT04534283 
+#                                            1                                             1 
+#                                  NCT04817956                                   NCT04892446 
+#                                            1                                             2 
+
+pubmed2$Trial_ID <- pubmed2$`Trial registry ID`
+
+pubmed2$Trial_ID[pubmed2$Trial_ID == "29882016 ; NCT00620594"] <- "NCT00620594"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "36973538 ; NCT03805399"] <- "NCT03805399"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT01203722 ; 34425261"] <- "NCT01203722"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT01963052 ; 37861407"] <- "NCT01963052"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT02465060 ; 31922567"] <- "NCT02465060"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT02646748 ; 38115208"] <- "NCT02646748"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT02664935 ; 32669708"] <- "NCT02664935"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT02664935 ; ISRCTN38344105 ; 2014-000814-73"] <- "NCT02664935"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT02705105 ; 34753777"] <- "NCT02705105"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT03182634 ; 32919527"] <- "NCT03182634"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT03251378 ; 37796398"] <- "NCT03251378"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT03786081 ; 37651655"] <- "NCT03786081"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT03838042 ; 32503469"] <- "NCT03838042"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT03944772 ; 34389237"] <- "NCT03944772"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT0414553 ; 36108304"] <- "NCT04145531"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT0414553 ; 36108304"] <- "NCT04145531"
+pubmed2$Trial_ID[is.na(pubmed2$Trial_ID)] <- "38910310"
+
+table(pubmed2$Trial_ID)
+
+#   38910310 NCT00620594 NCT01203722 NCT01248949 NCT01953926 NCT01963052 NCT02419495 NCT02420912 
+#          3           1           3           1           2           1           1           1 
+#NCT02465060 NCT02646748 NCT02664935 NCT02675829 NCT02705105 NCT03066206 NCT03138083 NCT03182634 
+#          2           2           2           1           1           1           1           1 
+#NCT03251378 NCT03573544 NCT03651271 NCT03671018 NCT03786081 NCT03805399 NCT03838042 NCT03944772 
+#          1           1           1           1           1           3           4           5 
+#NCT04145531 NCT04534283 NCT04817956 NCT04892446 
+#          2           1           1           2 
+
+#Remove Non-eligible study (rows 12, 28, 46, 50)
+
+table(pubmed2$Elligibility)
+
+# No Yes 
+#  4  47 
+
+pubmed2 <- pubmed2[-c(12, 28, 46, 50), ]
+
+table(pubmed2$Elligibility)
+
+#Yes 
+# 47
+```
+
+```{r duplication removal, include=TRUE}
+
+pubmed2[26,"hardID_cc"] <- "PM7"
+
+#Check all PM3 & PM7 values entered - to make sure PM3 = SUMMIT, PM7 = INFORM2
+
+library(dplyr)
+pubmed2_filtered <- pubmed2 %>%
+  filter(hardID_cc %in% c("PM3", "PM7"))
+
+print(pubmed2_filtered)
+
+pubmed2 <- pubmed2[-c(2), ]
+
+library(dplyr)
+pubmed2_filtered <- pubmed2 %>%
+  filter(hardID_cc %in% c("PM3", "PM7"))
+
+print(pubmed2_filtered)
+
+######################################################################################################
+
+#Date filtering
+
+#Trial start/publish date
+
+library(lubridate)
+
+pubmed2$trial_start_date <- dmy(pubmed2$`trial open/published date `)
+
+class(pubmed2$trial_start_date)
+
+#[1] "Date"
+
+#Data entry start/completed date
+
+pubmed2$data_entry_time <- dmy_hms(pubmed2$Comp_Time)
+
+class(pubmed2$data_entry_time)
+
+#[1] "POSIXct" "POSIXt" 
+
+######################################################################################################
+
+#Duplicate check
+
+#####pubmed2$hardID_raw <- pubmed2$`ID (e.g.  PM1, CT2 or EU3)`
+
+#pubmed_all <- pubmed2 %>%
+#  group_by(Trial_ID) %>%
+#  arrange(Trial_ID) %>%
+#  select(Id, Trial_ID, hardID_cc, hardID_raw)
+
+#print(pubmed_all)
+
+# Group by ID and filter IDs with more than 1 observation
+pubmed_multiple_entry <- pubmed2 %>%
+  group_by(Trial_ID) %>%
+  filter(n() > 1) %>%
+  arrange(Trial_ID) %>%
+  select(Id, data_entry_time, Trial_ID, hardID_cc)
+
+# Print the result
+print(pubmed_multiple_entry)
+
+```
+
+
+
+
