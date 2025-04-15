@@ -1,0 +1,57 @@
+---
+title: "Tables"
+format: html
+editor: visual
+---
+
+```{r import data, include=TRUE}
+
+#Enter up to date data extraction file in here:
+
+library(readxl)
+
+pubmed <- read.csv("C:/Users/jskinner/OneDrive - The Institute of Cancer Research/Desktop/Jack/LCD/Sabine-Dreibe-PhD-Project/dataextract_15.04.25.csv", header=FALSE, comment.char="#")
+
+#Put top row as column names
+
+library(janitor)
+pubmed %>%
+  row_to_names(row_number = 1)
+
+
+```
+
+```{r summary tables, include=TRUE}
+
+
+
+
+
+#Overall table
+
+estimanddb_final_table |> tbl_summary(by = `Estimands used?`, include = c(
+  `Sponsor type`, 
+  `Funding type`, 
+  `Single or multi-country?`, 
+  `Trial in UK?`, 
+  `Treatment allocation`, 
+  `Intervention model`, 
+  `Trial Phase`, 
+  `SAP file available?`, 
+  `Protocol file available?`, 
+  `Year opened`, 
+  `Cancer or non-cancer disease`
+),
+  percent = "row",
+  type = `Trial in UK?` ~ "categorical") |>
+  add_n() |>
+  add_overall(last=TRUE) |>
+  modify_spanning_header(c("stat_1", "stat_2") ~ "**Estimand's used?**") |>
+  italicize_levels() |>
+  modify_caption("**Table 12. Estimand usage by category**") |>
+  bold_labels() |>
+  add_p(test.args = all_tests("fisher.test") ~ list(workspace=2e9)) |>
+  bold_p(t=0.05)
+
+```
+
