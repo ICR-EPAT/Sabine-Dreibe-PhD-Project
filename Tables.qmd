@@ -303,9 +303,23 @@ pubmed_latest_entries <- pubmed_latest_entries %>%
 
 ```
 
+#FULL DATASET
+
 #Summary table - Overall
 
 ```{r summary tables, include=TRUE}
+
+#Cross-table variables that you want included in your overall table summary:
+
+# Variables wanted to include as rows:
+categorical_vars <- c("Research field", "Intervention type", "Phase", "plan_sample_size", "Funder" ) 
+
+# Sabine - enter the variables you want to include into the table in these parentheses encapsulated by quotation marks above. E.g - "Protocol type"
+
+#Stratified by variable:
+sponsor_var <- "Sponsor"
+
+######################################################################################################
 
 #Function for overall characteristics table by sponsor:
 
@@ -352,15 +366,7 @@ return(summary_table)
 
 #################################################################################################
 
-#Cross-table variables that you want included in your overall table summary:
 
-# Variables wanted to include as rows:
-categorical_vars <- c("Research field", "Intervention type", "Phase", "plan_sample_size", "Funder" ) 
-
-# Sabine - enter the variables you want to include into the table in these parentheses encapsulated by quotation marks above. E.g - "Protocol type"
-
-#Stratified by variable:
-sponsor_var <- "Sponsor"
 
 #################################################################################################
 
@@ -436,6 +442,7 @@ create_progression_table <- function(pubmed_latest_entries, sponsor_var1) {
 #################################################################################################################
   
 # Ensure continuous variables is numeric
+  
 pubmed_latest_entries$`number of arms DROPPED` <- as.numeric(as.character(pubmed_latest_entries$`number of arms DROPPED`))
 
 pubmed_latest_entries$`number of arms ADDED` <- as.numeric(as.character(pubmed_latest_entries$`number of arms ADDED`))
@@ -522,8 +529,242 @@ pubmed_latest_entries <- pubmed_latest_entries %>%
 
 ```
 
+#FILTERED BY PLANNING
+
+```{r pre-planned stratification, include=TRUE}
+
+filtered_planning <-  pubmed_latest_entries%>%
+                          group_by(`Was arm added/dropped planned in protocol? `) %>%
+                          filter(`Was arm added/dropped planned in protocol? ` == 'Yes')
+
+print(filtered_planning)
+
+```
+
+
+#Summary overall - by filtered planning
+
+```{r filtered planning overall sumamry, include=TRUE}
+
+#Cross-table variables that you want included in your overall table summary:
+
+# Variables wanted to include as rows:
+categorical_vars2 <- c("Research field", "Intervention type", "Phase", "plan_sample_size", "Funder" ) 
+
+# Sabine - enter the variables you want to include into the table in these parentheses encapsulated by quotation marks above. E.g - "Protocol type"
+
+#Stratified by variable:
+sponsor_var2 <- "Sponsor"
+
+######################################################################################################
+
+#Function for overall characteristics table by sponsor:
+
+######################################################################################################
+
+library(gtsummary)
+
+# Function to create the summary table for categorical variables
+create_summary_table2 <- function(filtered_planning, categorical_vars2, sponsor_var2) {
+
+#Sabine - this is where you can re-name the over-reaching table categories labeled ************************
+  
+var_labels2 <- list(
+              `Research field` = "Medical Field",
+              `Intervention type` = "Type of Intervention",
+              Phase = "Trial Phase",
+              plan_sample_size = "Planned Sample Size",
+              Funder = "Primary Funder"
+              )
+
+  # Create the summary table
+  summary_table2 <- filtered_planning %>%
+                    tbl_summary(
+                    by = sponsor_var, 
+                    include = categorical_vars2, 
+                    label = var_labels2,
+                    statistic = all_categorical() ~ "{n} ({p}%)",  
+                    digits = all_categorical() ~ c(0, 1),  
+                    missing = "no"  
+                  )
+  
+# Add the overall column
+  summary_table2 <- summary_table2 %>%
+                      add_overall(last = TRUE) %>%
+                      modify_spanning_header(c("stat_1", "stat_2") ~ "**Sponsor Type : Trials, No. (%)**") %>%
+                      modify_caption("**Table 1: General Platform Trial Characteristics by Filter**") %>%
+                      bold_labels() %>%
+                      italicize_levels() %>%
+    
+  
+# Return the summary table
+return(summary_table2)
+}
+
+#################################################################################################
 
 
 
+#################################################################################################
 
+#Call function:
+
+overall_table2 <- create_summary_table2(filtered_planning, categorical_vars2, sponsor_var2)
+
+#Create the overall summary table
+
+overall_table2
+
+##################################################################################################
+
+#Sabine - if you want to re-organise the sequence of variables included in the table just re-order how you like them included in the "categorical_vars" section above where you entered the variables you wanted.
+
+#Now if the sub-levels of the variable are not ordered the way you would like, you can re-order these using the following code and then re-generate the table. I'll use the "plan_sample_size" as an example but you can re-level any of the categorical variables for your table:
+
+filtered_planning$plan_sample_size <- factor(filtered_planning$plan_sample_size, levels = c("<100", "101-1000", ">1000", "Not reported"))
+
+###########################################################################################################
+
+#If you would like to re-name these sub-levels of the categorical variable use the following code you must re-label it before you call the function, so return to the top of this code chunk and re-run the code chunk to generate the table. - I'll use the "Research field" and "Intervention type" as an example below:
+
+library(forcats)
+
+#Rename "Research field" levels:
+
+filtered_planning <- filtered_planning %>%
+                          mutate(`Research field` = fct_recode(`Research field`,
+                          "Oncology" = "Oncology",
+                          "Dermatology" = "skin disorder"))
+
+#Rename "Intervention type" levels:
+
+filtered_planning <- filtered_planning %>%
+                          mutate(`Intervention type` = fct_recode(`Intervention type`,
+                          "Combination" = "Combination ( >=2 different interventions)",
+                          "Drug" = "Drug",
+                          "Transplant" = "transplant"))
+
+#You will need to re-paste this code, and re-enter the variable you want to change the values for so `Research field` would then be replaced with `Trial status` if you wanted to re-label your trial status values. Note, this may change the ordering in the table, so make sure you correct this with the code chunk listed above this.
+
+########################################################################################################
+
+#Sabine, if you would like to change the boldened category names for your selected variables. Go look up and I have made a note with ***************** next to where you can enter the original variable name and specify what you would like the table to re-read. We can go through this in an example.
+
+```
+
+#Summary progression - by filtered planning
+
+```{r filtered summary progression, include=TRUE}
+
+
+#Create function
+
+library(gtsummary)
+
+create_progression_table2 <- function(filtered_planning, sponsor_var2) {
+  
+# Define and add variables into the table here:
+  
+  categorical_vars2 <- c("Trial status", "Result reporting")
+  continuous_var2 <- c("number of arms DROPPED", "number of arms ADDED")
+  
+# Main labels for variables: ************************
+
+  var_labels2 <- list(
+    `Trial status` = "Status",
+    `Result reporting` = "Result availability",
+    `number of arms DROPPED` = "No. of arms dropped (median [IQR]; range)",
+    `number of arms ADDED` = "No. of arms added (median [IQR]; range)"
+  )
+  
+#################################################################################################################
+  
+# Ensure continuous variables is numeric
+  
+filtered_planning$`number of arms DROPPED` <- as.numeric(as.character(filtered_planning$`number of arms DROPPED`))
+
+filtered_planning$`number of arms ADDED` <- as.numeric(as.character(filtered_planning$`number of arms ADDED`))
+
+#################################################################################################################
+  
+  # Create progression table
+  progression_table2 <- filtered_planning %>%
+                          tbl_summary(
+                          by = sponsor_var2,
+                          include = c(categorical_vars2, continuous_var2),
+                          label = var_labels2,
+                          type = list(
+                          all_categorical() ~ "categorical",
+                          `number of arms DROPPED` ~ "continuous",
+                          `number of arms ADDED` ~ "continuous"# Explicitly declare 'number of arms DROPPED' as continuous
+                          ),
+                          statistic = list(
+                          all_categorical() ~ "{n} ({p}%)",
+                          `number of arms DROPPED` ~ "{median} [{p25}, {p75}]; range: {min}–{max}",
+                          `number of arms ADDED` ~ "{median} [{p25}, {p75}]; range: {min}–{max}"
+                          ),
+                          digits = list(
+                            all_categorical() ~ c(0, 1),
+                            `number of arms DROPPED` ~ 1,  
+                            `number of arms ADDED` ~ 1
+                          ),
+                          missing = "no"
+                          ) %>%
+                        add_overall(last = TRUE) %>%
+                        modify_spanning_header(c("stat_1", "stat_2") ~ "**Sponsor Type : Trials, No. (%)**") %>%
+                        modify_caption("**Table 2: Platform Trial Progression and Output**") %>%
+                        bold_labels() %>%
+                        italicize_levels()
+
+                      return(progression_table2)
+    }
+
+################################################################################################################################
+
+# Example usage
+sponsor_var2 <- "Sponsor"
+
+#Call function
+progression_table2 <- create_progression_table2(filtered_planning, sponsor_var2)
+
+progression_table2
+
+################################################################################################################################
+################################################################################################################################
+################################################################################################################################
+################################################################################################################################
+################################################################################################################################
+
+#Similarly to the overall table made above, you can edit the order's, names of the categories as well as the levels using the same code as below:
+
+#Sabine - if you want to re-organise the sequence of variables included in the table just re-order how you like them included in the "categorical_vars" section above where you entered the variables you wanted.
+
+#Now if the sub-levels of the variable are not ordered the way you would like, you can re-order these using the following code and then re-generate the table. I'll use the "plan_sample_size" as an example but you can re-level any of the categorical variables for your table:
+
+filtered_planning$`Trial status` <- factor(filtered_planning$`Trial status`, levels = c("Ongoing", "In planning", "Completed", "Discontinued/terminated", "Unclear"))
+
+###########################################################################################################
+
+#If you would like to re-name these sub-levels of the categorical variable use the following code you must re-label it before you call the function, so return to the top of this code chunk and re-run the code chunk to generate the table. - I'll use the "Research field" and "Intervention type" as an example below:
+
+library(forcats)
+
+#Rename "Research field":
+
+filtered_planning <- filtered_planning %>%
+                          mutate(`Trial status` = fct_recode(`Trial status`,
+                          "Ongoing" = "Ongoing",
+                          "In planning" = "In planning",
+                          "Completed" = "Completed",
+                          "Terminated" = "Discontinued/terminated",
+                          "Unclear" = "Unclear"))
+
+#You will need to re-paste this code, and re-enter the variable you want to change the values for so `Research field` would then be replaced with `Trial status` if you wanted to re-label your trial status values. Note, this may change the ordering in the table, so make sure you correct this with the code chunk listed above this.
+
+########################################################################################################
+
+#Sabine, if you would like to change the boldened category names for your selected variables. Go look up and I have made a note with **************** next to where you can enter the original variable name and specify what you would like the table to re-read. We can go through this in an example.
+
+
+```
 
