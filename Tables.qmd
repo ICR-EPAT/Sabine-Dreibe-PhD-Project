@@ -522,72 +522,7 @@ pubmed_latest_entries <- pubmed_latest_entries %>%
 
 ```
 
-```{r progression table, include=TRUE}
 
-#Create function
-
-library(gtsummary)
-
-create_progression_table <- function(pubmed_latest_entries, sponsor_var1) {
-  
-# Define variables
-  categorical_vars1 <- c("Trial status", "Result reporting")
-  continuous_var <- c("number of arms DROPPED", "number of arms ADDED")
-  
-  # Labels for variables
-  var_labels1 <- list(
-    `Trial status` = "Status",
-    `Result reporting` = "Result availability",
-    `number of arms DROPPED` = "No. of arms dropped (median [IQR]; range)",
-    `number of arms ADDED` = "No. of arms added (median [IQR]; range)"
-  )
-  
-# Ensure continuous variables is numeric
-pubmed_latest_entries$`number of arms DROPPED` <- as.numeric(as.character(pubmed_latest_entries$`number of arms DROPPED`))
-
-pubmed_latest_entries$`number of arms ADDED` <- as.numeric(as.character(pubmed_latest_entries$`number of arms ADDED`))
-  
-  # Create the table
-  progression_table <- pubmed_latest_entries %>%
-    tbl_summary(
-      by = sponsor_var1,
-      include = c(categorical_vars1, continuous_var),
-      label = var_labels1,
-      type = list(
-        all_categorical() ~ "categorical",
-        all_continuous() ~ "continuous",
-        `number of arms DROPPED` ~ "continuous"# Explicitly declare 'number of arms DROPPED' as continuous
-      ),
-      statistic = list(
-        all_categorical() ~ "{n} ({p}%)",
-        all_continuous() ~ "{median} [{p25}, {p75}]; range: {min}–{max}",# Use median, IQR, range for continuous
-        `number of arms DROPPED` ~ "{median} [{p25}, {p75}]; range: {min}–{max}"# Use median, IQR, range for continuous
-      ),
-      digits = list(
-        all_categorical() ~ c(0, 1),
-        all_continuous() ~ 1,  # Display one decimal for the continuous variable
-        `number of arms DROPPED` ~ 1
-      ),
-      missing = "no"
-    ) %>%
-    add_overall(last = TRUE) %>%
-    modify_spanning_header(c("stat_1", "stat_2") ~ "**Sponsor Type : Trials, No. (%)**") %>%
-    modify_caption("**Table 2: Platform Trial Progression and Output**") %>%
-    bold_labels() %>%
-    italicize_levels()
-
-  return(progression_table)
-}
-
-# Example usage
-sponsor_var1 <- "Sponsor"
-progression_table <- create_progression_table(pubmed_latest_entries, sponsor_var1)
-
-# Print the summary table
-progression_table
-
-
-```
 
 
 
