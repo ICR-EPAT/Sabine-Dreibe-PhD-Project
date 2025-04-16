@@ -4,54 +4,415 @@ format: html
 editor: visual
 ---
 
+
 ```{r import data, include=TRUE}
 
-#Enter up to date data extraction file in here:
+#Prior to importing your data. Open the data extraction form in Microsoft Excel and split the completion time into 2 parts:
+
+#1) A column called "Completion" that will the date in D/M/Y format as well as a new column called "time" which will be in H/M/S format.
+
+#2) Re-organise your "trial open/published" date into D/M/Y format aswell.
+
+#Save this file in .xlsx format and import the data as below:
+
+#Enter up to date data extraction file in here with the name of your most up to date data extraction with the completion time seperated and formatted as well as the trial open date formatted:
 
 library(readxl)
 
-pubmed <- read.csv("C:/Users/jskinner/OneDrive - The Institute of Cancer Research/Desktop/Jack/LCD/Sabine-Dreibe-PhD-Project/dataextract_15.04.25.csv", header=FALSE, comment.char="#")
-
-#Put top row as column names
-
-library(janitor)
-pubmed %>%
-  row_to_names(row_number = 1)
-
+pubmed <- read_excel("dataextract_tables.xlsx")
 
 ```
 
+#Time cleaning
+
+```{r missing values, include=TRUE}
+
+library(lubridate)
+pubmed$time <- ymd_hms(pubmed$time)
+pubmed$time <- format(pubmed$time, "%H:%M:%S")
+
+pubmed$Completion <- ymd(pubmed$Completion)
+pubmed$Completion <- format(pubmed$Completion, "%d-%m-%Y")
+
+pubmed$Comp_Time <- paste(pubmed$Completion, pubmed$time)
+
+pubmed$Comp_Time <- dmy_hms(pubmed$Comp_Time)
+class(pubmed$Comp_Time)
+
+#Trial Open/Published Date
+
+class(pubmed$`trial open/published date `)
+
+#[1] "POSIXct" "POSIXt"
+
+pubmed$`trial open/published date ` <- as.POSIXct(pubmed$`trial open/published date `, format="%Y-%m-%d")
+pubmed$`trial open/published date ` <- format(pubmed$`trial open/published date `, format="%d-%m-%Y")
+pubmed$`trial open/published date ` <- dmy(pubmed$`trial open/published date `)
+
+class(pubmed$`trial open/published date `)
+
+```
+
+#Data tidying for pilot/initial entries:
+
+```{r Data tidying, include=TRUE}
+
+table(pubmed$`ID (e.g.  PM1, CT2 or EU3)`)
+
+#Remove first test entries from SD: 
+
+pubmed2 <- pubmed[-2, ]
+
+table(pubmed2$`ID (e.g.  PM1, CT2 or EU3)`)
+
+#Re-labelling with hard coded ID
+
+pubmed2$hardID <- pubmed2$`ID (e.g.  PM1, CT2 or EU3)`
+
+pubmed2$hardID[pubmed2$hardID == "34389237"] <- "PM1"
+
+pubmed2$hardID[pubmed2$hardID == "36973538"] <- "PM2"
+
+pubmed2[7,"hardID"] <- "CT1"
+pubmed2[8, "hardID"] <- "CT2"
+
+table(pubmed2$hardID)
+
+pubmed2[3,"hardID"] <- "PM1"
+pubmed2[5,"hardID"] <- "PM2"
+
+pubmed3 <- pubmed2[, c("ID (e.g.  PM1, CT2 or EU3)", "Trial registry ID", "Trial name", "hardID")]
+
+pubmed2[9,"hardID"] <- "PM7"
+pubmed2[10,"hardID"] <- "PM1"
+pubmed2$hardID[pubmed2$hardID == "PM 29"] <- "PM29"
+pubmed2[1,"hardID"] <- "PM3"
+pubmed2[2,"hardID"] <- "PM3"
+
+table(pubmed2$hardID)
+
+#Drop entered Non-Eligible rows
+
+table(pubmed2$Elligibility)
+
+# No Yes 
+#  4  56 
+
+pubmed2 <- pubmed2[-c(12, 28, 46, 50), ]
+
+table(pubmed2$Elligibility)
+
+#Yes 
+# 56
+
+table(pubmed2$hardID)
+
+# CT1  CT2  PM1 PM10 PM11 PM12 PM13 PM14 PM16 PM17 PM18 PM19  PM2 PM20 PM23 PM24 
+#   1    1    3    2    2    2    2    3    1    1    1    1    2    1    2    2 
+#PM25 PM27 PM28  PM3 PM30 PM31 PM32 PM33 PM34  PM5  PM6  PM7  PM8  PM9 
+#   2    2    1    3    1    1    2    2    1    3    3    4    2    2 
+
+```
+
+#Tidying NCT registry numbers:
+
+```{r NCT registry ID tidy, include=TRUE}
+
+#Tidy NCT numbers/PMID numbers
+
+table(pubmed2$`Trial registry ID`)
+
+#                       ---------------------- 
+#                                            1 
+#                       ---------------------- 
+#                                            1 
+#                                     -------- 
+#                                            1 
+#                                  NCT01203722 
+#                                            1 
+#                       ---------------------- 
+#                                            2 
+#                                  NCT01248949 
+#                                            2 
+#                                  NCT01953926 
+#                                            2 
+#                       ---------------------- 
+#                                            1 
+#                                  NCT02419495 
+#                                            2 
+#                                  NCT02420912 
+#                                            1 
+#                                  NCT02465060 
+#                                            2 
+#                       ---------------------- 
+#                                            1 
+#                                  NCT02646748 
+#                                            1 
+#                       ---------------------- 
+#                                            1 
+#                       ---------------------- 
+#                                            1 
+#--------------------------------------------- 
+#                                            1 
+#                                  NCT02675829 
+#                                            1 
+#                       ---------------------- 
+#                                            1 
+#                                  NCT03066206 
+#                                            2 
+#                                  NCT03138083 
+#                                            2 
+#                                  NCT03182634 
+#                                            1 
+#                       ---------------------- 
+#                                            1 
+#                       ---------------------- 
+#                                            1 
+#                                  NCT03573544 
+#                                            1 
+#                                  NCT03651271 
+#                                            1 
+#                                  NCT03671018 
+#                                            1 
+#                       ---------------------- 
+#                                            1 
+#                                  NCT03805399 
+#                                            3 
+#                                  NCT03838042 
+#                                            4 
+#                       ---------------------- 
+#                                            1 
+#                                  NCT03944772 
+#                                            4 
+#                       ---------------------- 
+#                                            1 
+#                        --------------------- 
+#                                            1 
+#                                  NCT04145531 
+#                                            1 
+#                                  NCT04534283 
+#                                            1 
+#                                  NCT04817956 
+#                                            1 
+#                                  NCT04892446 
+#                                            2 
+
+pubmed2$Trial_ID <- pubmed2$`Trial registry ID`
+
+pubmed2$Trial_ID[pubmed2$Trial_ID == "29882016 ; NCT00620594"] <- "NCT00620594"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "36973538 ; NCT03805399"] <- "NCT03805399"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT01203722 ; 34425261"] <- "NCT01203722"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT01963052 ; 37861407"] <- "NCT01963052"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT02465060 ; 31922567"] <- "NCT02465060"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT02646748 ; 38115208"] <- "NCT02646748"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT02664935 ; 32669708"] <- "NCT02664935"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT02664935 ; ISRCTN38344105 ; 2014-000814-73"] <- "NCT02664935"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT02705105 ; 34753777"] <- "NCT02705105"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT03182634 ; 32919527"] <- "NCT03182634"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT03251378 ; 37796398"] <- "NCT03251378"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT03786081 ; 37651655"] <- "NCT03786081"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT03838042 ; 32503469"] <- "NCT03838042"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT03944772 ; 34389237"] <- "NCT03944772"
+pubmed2$Trial_ID[pubmed2$Trial_ID == "NCT0414553 ; 36108304"] <- "NCT04145531"
+pubmed2$Trial_ID[is.na(pubmed2$Trial_ID)] <- "38910310"
+
+table(pubmed2$Trial_ID)
+
+#   38910310 NCT00620594 NCT01203722 NCT01248949 NCT01953926 NCT01963052 NCT02419495 NCT02420912 
+#          4           1           3           2           2           1           2           1 
+#NCT02465060 NCT02646748 NCT02664935 NCT02675829 NCT02705105 NCT03066206 NCT03138083 NCT03182634 
+#          3           2           2           1           1           2           2           2 
+#NCT03251378 NCT03573544 NCT03651271 NCT03671018 NCT03786081 NCT03805399 NCT03838042 NCT03944772 
+#          1           1           1           1           1           4           5           5 
+#NCT04145531 NCT04534283 NCT04817956 NCT04892446 
+#          2           1           1           2  
+
+pubmed2[26,"hardID"] <- "PM7"
+
+pubmed2$hardID <- as.factor(pubmed2$hardID)
+
+library (dplyr)
+ordered_pubmed <- pubmed2 %>%
+  select(hardID, Trial_ID, Id) %>%
+  arrange(hardID)
+
+print(ordered_pubmed)
+
+```
+
+Cleaned/up to date data extract now in "pubmed2"
+
+#Remove all additional duplicates by latest entry time:
+
+```{r NCT number duplication removal by entry time, include=TRUE}
+
+pubmed2 <- pubmed2[-2, ]
+
+pubmed_latest_entries <- pubmed2 %>%
+                          group_by(hardID) %>%
+                          filter(Comp_Time == max(Comp_Time)) %>%
+                          ungroup()
+
+#View latest entries in order with NCT number and hardID
+
+ordered_pubmed_latest <- pubmed_latest_entries %>%
+                          select(hardID, Trial_ID, Id) %>%
+                          arrange(hardID)
+
+print(ordered_pubmed_latest)
+
+#Check for duplicates of hardID
+
+filtered_duplicates <-  pubmed_latest_entries%>%
+                          group_by(hardID) %>%
+                          filter(n() > 1)
+
+print(filtered_duplicates)
+
+#No duplicates
+
+```
+#Categorise sample size
+
+```{r sample size category, include=TRUE}
+
+summary(pubmed_latest_entries$`PLANED overall sample  sample size`)
+
+#   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#   30.0    69.0   129.0   256.1   191.0  3000.0       2
+
+#Categorised into 4 bins under "plan_sample_size" field:
+
+#<100
+#101-1000
+#>1000
+#Not reported
+
+pubmed_latest_entries$plan_sample_size <- pubmed_latest_entries$`PLANED overall sample  sample size`
+
+pubmed_latest_entries <- pubmed_latest_entries %>%
+  mutate(
+    plan_sample_size = case_when(
+      is.na(plan_sample_size) ~ "Not reported",
+      plan_sample_size < 100 ~ "<100",
+      plan_sample_size >= 101 & plan_sample_size <= 1000 ~ "101-1000",
+      plan_sample_size > 1000 ~ ">1000",
+      TRUE ~ "Other"
+    )
+  )
+
+```
+
+#Summary table - Overall
+
 ```{r summary tables, include=TRUE}
 
+#Function for overall characteristics table by sponsor:
 
+######################################################################################################
 
+library(gtsummary)
 
+# Function to create the summary table for categorical variables
+create_summary_table <- function(pubmed_latest_entries, categorical_vars, sponsor_var) {
 
-#Overall table
+#Sabine - this is where you can re-name the over-reaching table categories labeled ***
+  
+var_labels <- list(
+              `Research field` = "Medical Field",
+              `Intervention type` = "Type of Intervention",
+              Phase = "Trial Phase",
+              plan_sample_size = "Planned Sample Size",
+              Funder = "Primary Funder"
+              )
 
-estimanddb_final_table |> tbl_summary(by = `Estimands used?`, include = c(
-  `Sponsor type`, 
-  `Funding type`, 
-  `Single or multi-country?`, 
-  `Trial in UK?`, 
-  `Treatment allocation`, 
-  `Intervention model`, 
-  `Trial Phase`, 
-  `SAP file available?`, 
-  `Protocol file available?`, 
-  `Year opened`, 
-  `Cancer or non-cancer disease`
-),
-  percent = "row",
-  type = `Trial in UK?` ~ "categorical") |>
-  add_n() |>
-  add_overall(last=TRUE) |>
-  modify_spanning_header(c("stat_1", "stat_2") ~ "**Estimand's used?**") |>
-  italicize_levels() |>
-  modify_caption("**Table 12. Estimand usage by category**") |>
-  bold_labels() |>
-  add_p(test.args = all_tests("fisher.test") ~ list(workspace=2e9)) |>
-  bold_p(t=0.05)
+  # Create the summary table
+  summary_table <- pubmed_latest_entries %>%
+    tbl_summary(
+      by = sponsor_var, 
+      percent = "row",  
+      include = categorical_vars, 
+      label = var_labels,
+      statistic = all_categorical() ~ "{n} ({p}%)",  
+      digits = all_categorical() ~ c(0, 1),  
+      missing = "no"  
+    )
+  
+# Add the overall column
+  summary_table <- summary_table %>%
+    add_overall(last = TRUE) %>%
+    modify_spanning_header(c("stat_1", "stat_2") ~ "**Sponsor Type : Trials, No. (%)**") %>%
+    modify_caption("**General Platform Trial Characteristics**") %>%
+    bold_labels() %>%
+    italicize_levels() %>%
+    
+  
+  # Return the summary table
+  return(summary_table)
+}
+
+#################################################################################################
+
+#Cross-table variables that you want included in your overall table summary:
+
+# Variables wanted to include as rows:
+categorical_vars <- c("Research field", "Intervention type", "Phase", "plan_sample_size", "Funder" ) 
+
+# Sabine - enter the variables you want to include into the table in these parentheses encapsulated by quotation marks above. E.g - "Protocol type"
+
+#Stratified by variable:
+sponsor_var <- "Sponsor"
+
+#################################################################################################
+
+#Call function:
+
+overall_table <- create_summary_table(pubmed_latest_entries, categorical_vars, sponsor_var)
+
+#Create the overall summary table
+
+overall_table
+
+##################################################################################################
+
+#Sabine - if you want to re-organise the sequence of variables included in the table just re-order how you like them included in the "categorical_vars" section above where you entered the variables you wanted.
+
+#Now if the sub-levels of the variable are not ordered the way you would like, you can re-order these using the following code and then re-generate the table. I'll use the "plan_sample_size" as an example but you can re-level any of the categorical variables for your table:
+
+pubmed_latest_entries$plan_sample_size <- factor(pubmed_latest_entries$plan_sample_size, levels = c("<100", "101-1000", ">1000", "Not reported"))
+
+###########################################################################################################
+
+#If you would like to re-name these sub-levels of the categorical variable use the following code you must re-label it before you call the function, so return to the top of this code chunk and re-run the code chunk to generate the table. - I'll use the "Research field" and "Intervention type" as an example below:
+
+library(forcats)
+
+#Rename "Research field":
+
+pubmed_latest_entries <- pubmed_latest_entries %>%
+                          mutate(`Research field` = fct_recode(`Research field`,
+                          "Oncology" = "Oncology",
+                          "Dermatology" = "skin disorder"))
+
+#Rename "Intervention type":
+
+pubmed_latest_entries <- pubmed_latest_entries %>%
+                          mutate(`Intervention type` = fct_recode(`Intervention type`,
+                          "Combination" = "Combination ( >=2 different interventions)",
+                          "Drug" = "Drug",
+                          "Transplant" = "transplant"))
+
+#You will need to re-paste this code, and re-enter the variable you want to change the values for so `Research field` would then be replaced with `Trial status` if you wanted to re-label your trial status values. Note, this may change the ordering in the table, so make sure you correct this with the code chunk listed above this.
+
+########################################################################################################
+
+#Sabine, if you would like to change the boldened category names for your selected variables. Go look up and I have made a note with *** next to where you can enter the original variable name and specify what you would like the table to re-read. We can go through this in an example.
+
+```
+
+#Summary table - Trial progression/output
+
+```{r Summary table trial progression, include=TRUE}
 
 ```
 
