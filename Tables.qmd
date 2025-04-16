@@ -328,26 +328,26 @@ var_labels <- list(
 
   # Create the summary table
   summary_table <- pubmed_latest_entries %>%
-    tbl_summary(
-      by = sponsor_var, 
-      include = categorical_vars, 
-      label = var_labels,
-      statistic = all_categorical() ~ "{n} ({p}%)",  
-      digits = all_categorical() ~ c(0, 1),  
-      missing = "no"  
-    )
+                    tbl_summary(
+                    by = sponsor_var, 
+                    include = categorical_vars, 
+                    label = var_labels,
+                    statistic = all_categorical() ~ "{n} ({p}%)",  
+                    digits = all_categorical() ~ c(0, 1),  
+                    missing = "no"  
+                  )
   
 # Add the overall column
   summary_table <- summary_table %>%
-    add_overall(last = TRUE) %>%
-    modify_spanning_header(c("stat_1", "stat_2") ~ "**Sponsor Type : Trials, No. (%)**") %>%
-    modify_caption("**Table 1: General Platform Trial Characteristics**") %>%
-    bold_labels() %>%
-    italicize_levels() %>%
+                      add_overall(last = TRUE) %>%
+                      modify_spanning_header(c("stat_1", "stat_2") ~ "**Sponsor Type : Trials, No. (%)**") %>%
+                      modify_caption("**Table 1: General Platform Trial Characteristics**") %>%
+                      bold_labels() %>%
+                      italicize_levels() %>%
     
   
-  # Return the summary table
-  return(summary_table)
+# Return the summary table
+return(summary_table)
 }
 
 #################################################################################################
