@@ -316,7 +316,7 @@ library(gtsummary)
 # Function to create the summary table for categorical variables
 create_summary_table <- function(pubmed_latest_entries, categorical_vars, sponsor_var) {
 
-#Sabine - this is where you can re-name the over-reaching table categories labeled ***
+#Sabine - this is where you can re-name the over-reaching table categories labeled ************************
   
 var_labels <- list(
               `Research field` = "Medical Field",
@@ -330,7 +330,6 @@ var_labels <- list(
   summary_table <- pubmed_latest_entries %>%
     tbl_summary(
       by = sponsor_var, 
-      percent = "row",  
       include = categorical_vars, 
       label = var_labels,
       statistic = all_categorical() ~ "{n} ({p}%)",  
@@ -342,7 +341,7 @@ var_labels <- list(
   summary_table <- summary_table %>%
     add_overall(last = TRUE) %>%
     modify_spanning_header(c("stat_1", "stat_2") ~ "**Sponsor Type : Trials, No. (%)**") %>%
-    modify_caption("**General Platform Trial Characteristics**") %>%
+    modify_caption("**Table 1: General Platform Trial Characteristics**") %>%
     bold_labels() %>%
     italicize_levels() %>%
     
@@ -387,14 +386,14 @@ pubmed_latest_entries$plan_sample_size <- factor(pubmed_latest_entries$plan_samp
 
 library(forcats)
 
-#Rename "Research field":
+#Rename "Research field" levels:
 
 pubmed_latest_entries <- pubmed_latest_entries %>%
                           mutate(`Research field` = fct_recode(`Research field`,
                           "Oncology" = "Oncology",
                           "Dermatology" = "skin disorder"))
 
-#Rename "Intervention type":
+#Rename "Intervention type" levels:
 
 pubmed_latest_entries <- pubmed_latest_entries %>%
                           mutate(`Intervention type` = fct_recode(`Intervention type`,
@@ -406,7 +405,7 @@ pubmed_latest_entries <- pubmed_latest_entries %>%
 
 ########################################################################################################
 
-#Sabine, if you would like to change the boldened category names for your selected variables. Go look up and I have made a note with *** next to where you can enter the original variable name and specify what you would like the table to re-read. We can go through this in an example.
+#Sabine, if you would like to change the boldened category names for your selected variables. Go look up and I have made a note with ***************** next to where you can enter the original variable name and specify what you would like the table to re-read. We can go through this in an example.
 
 ```
 
@@ -414,5 +413,182 @@ pubmed_latest_entries <- pubmed_latest_entries %>%
 
 ```{r Summary table trial progression, include=TRUE}
 
+#Create function
+
+library(gtsummary)
+
+create_progression_table <- function(pubmed_latest_entries, sponsor_var1) {
+  
+# Define and add variables into the table here:
+  
+  categorical_vars1 <- c("Trial status", "Result reporting")
+  continuous_var <- c("number of arms DROPPED", "number of arms ADDED")
+  
+# Main labels for variables: ************************
+
+  var_labels1 <- list(
+    `Trial status` = "Status",
+    `Result reporting` = "Result availability",
+    `number of arms DROPPED` = "No. of arms dropped (median [IQR]; range)",
+    `number of arms ADDED` = "No. of arms added (median [IQR]; range)"
+  )
+  
+#################################################################################################################
+  
+# Ensure continuous variables is numeric
+pubmed_latest_entries$`number of arms DROPPED` <- as.numeric(as.character(pubmed_latest_entries$`number of arms DROPPED`))
+
+pubmed_latest_entries$`number of arms ADDED` <- as.numeric(as.character(pubmed_latest_entries$`number of arms ADDED`))
+
+#################################################################################################################
+  
+  # Create progression table
+  progression_table <- pubmed_latest_entries %>%
+                          tbl_summary(
+                          by = sponsor_var1,
+                          include = c(categorical_vars1, continuous_var),
+                          label = var_labels1,
+                          type = list(
+                          all_categorical() ~ "categorical",
+                          all_continuous() ~ "continuous",
+                          `number of arms DROPPED` ~ "continuous"# Explicitly declare 'number of arms DROPPED' as continuous
+                          ),
+                          statistic = list(
+                          all_categorical() ~ "{n} ({p}%)",
+                          all_continuous() ~ "{median} [{p25}, {p75}]; range: {min}–{max}",
+                          `number of arms DROPPED` ~ "{median} [{p25}, {p75}]; range: {min}–{max}"
+                          ),
+                          digits = list(
+                            all_categorical() ~ c(0, 1),
+                            all_continuous() ~ 1,  
+                            `number of arms DROPPED` ~ 1
+                          ),
+                          missing = "no"
+                          ) %>%
+                        add_overall(last = TRUE) %>%
+                        modify_spanning_header(c("stat_1", "stat_2") ~ "**Sponsor Type : Trials, No. (%)**") %>%
+                        modify_caption("**Table 2: Platform Trial Progression and Output**") %>%
+                        bold_labels() %>%
+                        italicize_levels()
+
+                      return(progression_table)
+    }
+
+################################################################################################################################
+
+# Example usage
+sponsor_var1 <- "Sponsor"
+
+#Call function
+progression_table <- create_progression_table(pubmed_latest_entries, sponsor_var1)
+
+progression_table
+
+################################################################################################################################
+################################################################################################################################
+################################################################################################################################
+################################################################################################################################
+################################################################################################################################
+
+#Similarly to the overall table made above, you can edit the order's, names of the categories as well as the levels using the same code as below:
+
+#Sabine - if you want to re-organise the sequence of variables included in the table just re-order how you like them included in the "categorical_vars" section above where you entered the variables you wanted.
+
+#Now if the sub-levels of the variable are not ordered the way you would like, you can re-order these using the following code and then re-generate the table. I'll use the "plan_sample_size" as an example but you can re-level any of the categorical variables for your table:
+
+pubmed_latest_entries$`Trial status` <- factor(pubmed_latest_entries$`Trial status`, levels = c("Ongoing", "In planning", "Completed", "Discontinued/terminated", "Unclear"))
+
+###########################################################################################################
+
+#If you would like to re-name these sub-levels of the categorical variable use the following code you must re-label it before you call the function, so return to the top of this code chunk and re-run the code chunk to generate the table. - I'll use the "Research field" and "Intervention type" as an example below:
+
+library(forcats)
+
+#Rename "Research field":
+
+pubmed_latest_entries <- pubmed_latest_entries %>%
+                          mutate(`Trial status` = fct_recode(`Trial status`,
+                          "Ongoing" = "Ongoing",
+                          "In planning" = "In planning",
+                          "Completed" = "Completed",
+                          "Terminated" = "Discontinued/terminated",
+                          "Unclear" = "Unclear"))
+
+#You will need to re-paste this code, and re-enter the variable you want to change the values for so `Research field` would then be replaced with `Trial status` if you wanted to re-label your trial status values. Note, this may change the ordering in the table, so make sure you correct this with the code chunk listed above this.
+
+########################################################################################################
+
+#Sabine, if you would like to change the boldened category names for your selected variables. Go look up and I have made a note with **************** next to where you can enter the original variable name and specify what you would like the table to re-read. We can go through this in an example.
+
 ```
+
+```{r progression table, include=TRUE}
+
+#Create function
+
+library(gtsummary)
+
+create_progression_table <- function(pubmed_latest_entries, sponsor_var1) {
+  
+# Define variables
+  categorical_vars1 <- c("Trial status", "Result reporting")
+  continuous_var <- c("number of arms DROPPED", "number of arms ADDED")
+  
+  # Labels for variables
+  var_labels1 <- list(
+    `Trial status` = "Status",
+    `Result reporting` = "Result availability",
+    `number of arms DROPPED` = "No. of arms dropped (median [IQR]; range)",
+    `number of arms ADDED` = "No. of arms added (median [IQR]; range)"
+  )
+  
+# Ensure continuous variables is numeric
+pubmed_latest_entries$`number of arms DROPPED` <- as.numeric(as.character(pubmed_latest_entries$`number of arms DROPPED`))
+
+pubmed_latest_entries$`number of arms ADDED` <- as.numeric(as.character(pubmed_latest_entries$`number of arms ADDED`))
+  
+  # Create the table
+  progression_table <- pubmed_latest_entries %>%
+    tbl_summary(
+      by = sponsor_var1,
+      include = c(categorical_vars1, continuous_var),
+      label = var_labels1,
+      type = list(
+        all_categorical() ~ "categorical",
+        all_continuous() ~ "continuous",
+        `number of arms DROPPED` ~ "continuous"# Explicitly declare 'number of arms DROPPED' as continuous
+      ),
+      statistic = list(
+        all_categorical() ~ "{n} ({p}%)",
+        all_continuous() ~ "{median} [{p25}, {p75}]; range: {min}–{max}",# Use median, IQR, range for continuous
+        `number of arms DROPPED` ~ "{median} [{p25}, {p75}]; range: {min}–{max}"# Use median, IQR, range for continuous
+      ),
+      digits = list(
+        all_categorical() ~ c(0, 1),
+        all_continuous() ~ 1,  # Display one decimal for the continuous variable
+        `number of arms DROPPED` ~ 1
+      ),
+      missing = "no"
+    ) %>%
+    add_overall(last = TRUE) %>%
+    modify_spanning_header(c("stat_1", "stat_2") ~ "**Sponsor Type : Trials, No. (%)**") %>%
+    modify_caption("**Table 2: Platform Trial Progression and Output**") %>%
+    bold_labels() %>%
+    italicize_levels()
+
+  return(progression_table)
+}
+
+# Example usage
+sponsor_var1 <- "Sponsor"
+progression_table <- create_progression_table(pubmed_latest_entries, sponsor_var1)
+
+# Print the summary table
+progression_table
+
+
+```
+
+
+
 
