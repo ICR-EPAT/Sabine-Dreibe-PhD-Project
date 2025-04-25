@@ -6,7 +6,7 @@ editor: visual
 
 ```{r import data, include=TRUE}
 
-#Prior to importing data go to Excel spreadsheet's raw data and make the start date and publication date into UK format. Split the start date into date and time in seperate columns. Save Excel file and join columns in R and re-label field as POSIXct format.
+#Prior to importing data go to Excel spreadsheet's raw data and make the completion date and publication/trial start date into UK format. Split the completion date into date and time components in 2 seperate columns - one labeled "Completion" that is the D/M/Y and "time" that is the H/M/S. Save Excel file and join columns in R and re-label field as POSIXct format as below.
 
 library(readxl)
 
@@ -39,6 +39,7 @@ pubmed$`trial open/published date ` <- format(pubmed$`trial open/published date
 pubmed$`trial open/published date ` <- dmy(pubmed$`trial open/published date `)
 
 class(pubmed$`trial open/published date `)
+
 ```
 
 ```{r new data frame with no duplicates, include=TRUE}
@@ -233,7 +234,3 @@ write_xlsx(pubmed2, "C:/Users/jskinner/OneDrive - The Institute of Cancer Resear
 
 
 ```
-
-
-
-
