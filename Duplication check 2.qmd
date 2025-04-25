@@ -1,0 +1,93 @@
+---
+title: "Duplicates check"
+format: html
+editor: visual
+---
+
+```{r import 3 data sets, include=}
+
+#Import all 3 data sets and re-name unique ID variable
+
+library(readxl)
+
+pubmed <- read_excel("Pubmed check 4.xlsx")
+EUCTR <- read_excel("EUCTR check.xlsx")
+CTGOV <- read_excel("CTG check.xlsx")
+
+#Rename NCT number for each dataframe as unique ID.
+
+EUCTR$nct_id <- EUCTR$a52_us_nct_clinicaltrialsgov_registry_number
+CTGOV$nct_id <- CTGOV$`NCT Number`
+pubmed$nct_id <- pubmed$Trial_ID
+
+```
+
+```{r Pubmed NCT number comparison with CTGOV, include=TRUE}
+
+#Search for duplicate NCT numbers between screened/extracted PubMed & CTGOV screened:
+
+duplicated_in_pubmed_CTGOV <- intersect(pubmed$nct_id, CTGOV$nct_id)
+
+print(duplicated_in_pubmed_CTGOV)
+
+```
+
+```{r Pubmed NCT number comparison with EUCTR, include=TRUE}
+
+duplicated_in_pubmed_EUCTR <- intersect(pubmed$nct_id, EUCTR$nct_id)
+
+print(duplicated_in_pubmed_EUCTR)
+
+```
+
+```{r CTGOV NCT number comparison with EUCTR, include=TRUE}
+
+duplicated_in_CTGOV_EUCTR <- intersect(CTGOV$nct_id, EUCTR$nct_id)
+
+print(duplicated_in_CTGOV_EUCTR)
+
+```
+
+```{r Extract duplicated rows from Pubmed, CTGOV & EUCTR data frames, include=TRUE}
+
+#Create object of duplicates
+
+duplicated_in_pubmed_CTGOV_rows <- pubmed[pubmed$nct_id %in% duplicated_in_pubmed_CTGOV, ]
+duplicated_in_pubmed_EUCTR_rows <- pubmed[pubmed$nct_id %in% duplicated_in_pubmed_EUCTR, ]
+duplicated_in_CTGOV_EUCTR_rows <- CTGOV[CTGOV$nct_id %in% duplicated_in_CTGOV_EUCTR, ]
+
+```
+
+```{r Remove duplicated results from all data frames, include=TRUE}
+
+#Remove duplicated rows from each dataframe
+
+pubmed_cleaned <- pubmed[!(pubmed$nct_id %in% c(duplicated_in_pubmed_CTGOV, duplicated_in_pubmed_EUCTR)), ]
+CTGOV_cleaned <- CTGOV[!(CTGOV$nct_id %in% c(duplicated_in_pubmed_CTGOV, duplicated_in_CTGOV_EUCTR)), ]
+EUCTR_cleaned <- EUCTR[!(EUCTR$nct_id %in% c(duplicated_in_pubmed_EUCTR, duplicated_in_CTGOV_EUCTR)), ]
+
+```
+
+```{r print results, include=TRUE}
+
+#Cleaned lists of Pubmed, CTGOV & EUCTR dataframes
+
+list(
+  pubmed_cleaned = pubmed_cleaned,
+  CTGOV_cleaned = CTGOV_cleaned,
+  EUCTR_cleaned = EUCTR_cleaned,
+  duplicated_in_pubmed_CTGOV_rows = duplicated_in_pubmed_CTGOV_rows,
+  duplicated_in_pubmed_EUCTR_rows = duplicated_in_pubmed_EUCTR_rows,
+  duplicated_in_CTGOV_EUCTR_rows = duplicated_in_CTGOV_EUCTR_rows
+)
+
+
+#Save as xlsx files:
+
+library(writexl)
+write_xlsx(pubmed_cleaned, "pubmed_clean2.xlsx")
+write_xlsx(CTGOV_cleaned, "CTGOV_clean2.xlsx")
+write_xlsx(EUCTR_cleaned, "EUCTR_clean2.xlsx")
+
+```
+
