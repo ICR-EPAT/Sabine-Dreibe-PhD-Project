@@ -50,6 +50,8 @@ print(duplicated_in_CTGOV_EUCTR)
 
 ```{r Extract duplicated rows from Pubmed, CTGOV & EUCTR data frames, include=TRUE}
 
+#Create object of duplicates
+
 duplicated_in_pubmed_CTGOV_rows <- pubmed[pubmed$nct_id %in% duplicated_in_pubmed_CTGOV, ]
 duplicated_in_pubmed_EUCTR_rows <- pubmed[pubmed$nct_id %in% duplicated_in_pubmed_EUCTR, ]
 duplicated_in_CTGOV_EUCTR_rows <- CTGOV[CTGOV$nct_id %in% duplicated_in_CTGOV_EUCTR, ]
@@ -58,6 +60,8 @@ duplicated_in_CTGOV_EUCTR_rows <- CTGOV[CTGOV$nct_id %in% duplicated_in_CTGOV_EU
 
 ```{r Remove duplicated results from all data frames, include=TRUE}
 
+#Remove duplicated rows from each dataframe
+
 pubmed_cleaned <- pubmed[!(pubmed$nct_id %in% c(duplicated_in_pubmed_CTGOV, duplicated_in_pubmed_EUCTR)), ]
 CTGOV_cleaned <- CTGOV[!(CTGOV$nct_id %in% c(duplicated_in_pubmed_CTGOV, duplicated_in_CTGOV_EUCTR)), ]
 EUCTR_cleaned <- EUCTR[!(EUCTR$nct_id %in% c(duplicated_in_pubmed_EUCTR, duplicated_in_CTGOV_EUCTR)), ]
@@ -65,6 +69,8 @@ EUCTR_cleaned <- EUCTR[!(EUCTR$nct_id %in% c(duplicated_in_pubmed_EUCTR, duplica
 ```
 
 ```{r print results, include=TRUE}
+
+#Cleaned lists of Pubmed, CTGOV & EUCTR dataframes
 
 list(
   pubmed_cleaned = pubmed_cleaned,
