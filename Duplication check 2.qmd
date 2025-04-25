@@ -10,7 +10,7 @@ editor: visual
 
 library(readxl)
 
-pubmed <- read_excel("Pubmed check 2.xlsx")
+pubmed <- read_excel("Pubmed check 3.xlsx")
 EUCTR <- read_excel("EUCTR check.xlsx")
 CTGOV <- read_excel("CTG check.xlsx")
 
@@ -80,6 +80,14 @@ list(
   duplicated_in_pubmed_EUCTR_rows = duplicated_in_pubmed_EUCTR_rows,
   duplicated_in_CTGOV_EUCTR_rows = duplicated_in_CTGOV_EUCTR_rows
 )
+
+
+#Save as xlsx files:
+
+library(writexl)
+write_xlsx(pubmed_cleaned, "pubmed_clean.xlsx")
+write_xlsx(CTGOV_cleaned, "CTGOV_clean.xlsx")
+write_xlsx(EUCTR_cleaned, "EUCTR_clean.xlsx")
 
 ```
 
